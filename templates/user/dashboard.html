@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Gym Tracker{% endblock %}
+{% block content %}
+
+<div class="hero-banner hero-dumbbell mb-4 reveal in-view">
+    <div class="hero-content">
+        <div class="hero-eyebrow mb-2">Your training log</div>
+        <h2 class="hero-title">Welcome back, <span class="amber">{{ current_user.username }}</span></h2>
+        <p class="hero-sub">Numbers don't lie, and neither does the bar. Track the work, trust the process, watch the totals climb.</p>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <a href="{{ url_for('user.export_csv') }}" class="btn btn-outline-light btn-sm">📥 Export CSV</a>
+            <span class="badge gt-badge-tier p-2">
+                {% if current_user.is_trial_active() %}<span class="text-amber">Active Trial</span>{% else %}<span style="color:#ff8a8a;">Trial Expired</span>{% endif %}
+                {% if days_remaining is defined and current_user.is_trial_active() and not current_user.is_admin and current_user.subscription_tier != 'pro' %}
+                    &nbsp;·&nbsp;{{ days_remaining }}d left
+                {% endif %}
+            </span>
+            <span class="badge gt-badge-tier p-2">Workouts: {{ workouts|length }}/10</span>
+        </div>
+    </div>
+</div>
+
+{% if not current_user.is_trial_active() %}
+<div class="alert alert-danger reveal in-view" role="alert">
+    <strong>30-Day Free Trial Expired!</strong> You've reached the end of your trial period. Logging new workouts is locked.
+    <a href="{{ url_for('subscription.checkout') }}" class="alert-link">Upgrade to Pro</a> to keep training without limits.
+</div>
+{% endif %}
+
+<!-- Interactive Visual Graphs -->
+<div class="row mb-4">
+    <div class="col-12 reveal">
+        <div class="card p-3">
+            <h4 class="card-title mb-3">📈 Total Volume Lifted Over Time (kg)</h4>
+            <canvas id="volumeChart" height="80"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- 1-Rep Max Calculator -->
+    <div class="col-md-6 tilt-card reveal">
+        <div class="tilt-inner card p-3 h-100">
+            <h4 class="card-title mb-3">🏋️ 1-Rep Max (1RM) Calculator</h4>
+            <p class="text-muted fs-7" style="text-transform:none; letter-spacing:normal;">Calculated using the Epley formula: $\text{1RM} = \text{Weight} \times (1 + \frac{\text{Reps}}{30})$</p>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="form-label">Weight (kg)</label>
+                    <input type="number" id="ormWeight" class="form-control" placeholder="100">
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Reps Completed</label>
+                    <input type="number" id="ormReps" class="form-control" placeholder="5">
+                </div>
+            </div>
+            <button onclick="calculate1RM()" class="btn btn-glow w-100 mb-3">Calculate 1RM</button>
+            <div id="ormResult" class="alert alert-dark text-center d-none mb-0">
+                Estimated 1RM: <strong id="ormValue" class="text-amber fs-5 mono">0 kg</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Macro/Calorie Calculator -->
+    <div class="col-md-6 tilt-card reveal delay-1">
+        <div class="tilt-inner card p-3 h-100">
+            <h4 class="card-title mb-3">🥗 Daily Calorie & Protein Calculator</h4>
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="form-label">Body Weight (kg)</label>
+                    <input type="number" id="macroWeight" class="form-control" placeholder="70">
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Goal</label>
+                    <select id="macroGoal" class="form-select">
+                        <option value="maintain">Maintain Weight</option>
+                        <option value="gain">Muscle Gain (+300 kcal)</option>
+                        <option value="lose">Fat Loss (-400 kcal)</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="calculateMacros()" class="btn btn-glow w-100 mb-3">Calculate Target</button>
+            <div id="macroResult" class="alert alert-dark d-none mb-0 text-center">
+                Daily Calories: <strong id="caloriesValue" class="text-amber fs-6 mono">0 kcal</strong> |
+                Protein Target: <strong id="proteinValue" class="text-amber fs-6 mono">0 g</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Motivational quote strip -->
+<div class="quote-strip mb-4 reveal">
+    <span class="quote-mark">&ldquo;</span>
+    <p>Progress isn't loud. It's a rack that's <span class="amber">slightly heavier</span> than last month. Log it, own it, repeat it.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Log Workout Form -->
+    <div class="col-lg-4 reveal">
+        <div class="card p-3">
+            <h4 class="card-title mb-3">Log Exercise</h4>
+            <form method="POST" action="{{ url_for('user.add_workout') }}">
+                <div class="mb-3">
+                    <label class="form-label">Exercise Name</label>
+                    <input type="text" name="exercise_name" class="form-control" placeholder="e.g. Bench Press, Squat" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <label class="form-label">Sets</label>
+                        <input type="number" name="sets" class="form-control" min="1" placeholder="4" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Reps</label>
+                        <input type="number" name="reps" class="form-control" min="1" placeholder="10" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" step="0.5" name="weight" class="form-control" min="0" placeholder="60" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notes (Optional)</label>
+                    <input type="text" name="notes" class="form-control" placeholder="e.g. Felt smooth, drop set on last rep">
+                </div>
+                <button type="submit" class="btn btn-glow btn-log-workout w-100" {% if not current_user.can_add_workout(limit=10) %}disabled{% endif %}>
+                    Add Workout
+                </button>
+            </form>
+
+            <div class="page-image-tile mt-4">
+                <img src="{{ url_for('static', filename='images/power-rack.png.jfif') }}" alt="Power rack loaded with plates, ready to lift">
+                <div class="tile-caption">Show up. Load the bar. Repeat.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout History Table -->
+    <div class="col-lg-8 reveal delay-1">
+        <div class="card p-3">
+            <h4 class="card-title mb-3">Workout History</h4>
+            {% if workouts %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Sets × Reps</th>
+                            <th>Weight</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for workout in workouts %}
+                        <tr>
+                            <td class="fw-bold">{{ workout.exercise_name }}</td>
+                            <td class="mono">{{ workout.sets }} × {{ workout.reps }}</td>
+                            <td><span class="badge bg-success">{{ workout.weight }} kg</span></td>
+                            <td class="text-muted fs-7">{{ workout.date.strftime('%b %d, %Y') }}</td>
+                            <td class="text-muted fs-7">{{ workout.notes or '-' }}</td>
+                            <td>
+                                <a href="{{ url_for('user.edit_workout', id=workout.id) }}" class="btn btn-sm btn-outline-warning me-1">Edit</a>
+                                <form method="POST" action="{{ url_for('user.delete_workout', id=workout.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this workout?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <p class="mb-1">No workouts logged yet.</p>
+                <p class="mb-0" style="text-transform:none; letter-spacing:normal;">Fill out the form on the left to start tracking.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Data container to safely bridge Flask/Jinja data to JavaScript -->
+<div id="chart-data-holder" data-chart='{{ chart_data | tojson | safe }}'></div>
+
+<script>
+    // 1RM Calculation Logic
+    function calculate1RM() {
+        const weight = parseFloat(document.getElementById('ormWeight').value);
+        const reps = parseInt(document.getElementById('ormReps').value);
+        if (weight > 0 && reps > 0) {
+            const orm = Math.round(weight * (1 + reps / 30));
+            document.getElementById('ormValue').textContent = orm + ' kg';
+            document.getElementById('ormResult').classList.remove('d-none');
+        }
+    }
+
+    // Macro Calculation Logic
+    function calculateMacros() {
+        const weight = parseFloat(document.getElementById('macroWeight').value);
+        const goal = document.getElementById('macroGoal').value;
+        if (weight > 0) {
+            let calories = weight * 32;
+            if (goal === 'gain') calories += 300;
+            if (goal === 'lose') calories -= 400;
+            const protein = Math.round(weight * 2.2);
+
+            document.getElementById('caloriesValue').textContent = Math.round(calories) + ' kcal';
+            document.getElementById('proteinValue').textContent = protein + ' g';
+            document.getElementById('macroResult').classList.remove('d-none');
+        }
+    }
+
+    // Chart.js Setup (100% Pure JavaScript - 0 Linter Warnings)
+    const rawChartData = document.getElementById('chart-data-holder').dataset.chart;
+    const workoutData = JSON.parse(rawChartData || '[]');
+
+    const ctx = document.getElementById('volumeChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: workoutData.map(function(d) { return d.date; }),
+            datasets: [{
+                label: 'Volume (Sets × Reps × Weight in kg)',
+                data: workoutData.map(function(d) { return d.volume; }),
+                borderColor: '#ffd60a',
+                backgroundColor: 'rgba(255, 214, 10, 0.15)',
+                borderWidth: 2,
+                pointBackgroundColor: '#ffd60a',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: '#c9c9c4' } }
+            },
+            scales: {
+                x: { ticks: { color: '#9b9b96' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+                y: { beginAtZero: true, ticks: { color: '#9b9b96' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Admin — Gym Tracker{% endblock %}
+{% block content %}
+
+<div class="hero-banner hero-boxing mb-4 reveal in-view">
+    <div class="hero-content">
+        <div class="hero-eyebrow mb-2">Control room</div>
+        <h2 class="hero-title">Admin <span class="amber">Dashboard</span></h2>
+        <p class="hero-sub">Behind every set logged is someone showing up when it would've been easier not to. Keep the platform running for them.</p>
+    </div>
+</div>
+
+<div class="row mb-4 g-4">
+    <div class="col-md-6 tilt-card reveal">
+        <div class="tilt-inner stat-card p-4">
+            <h3 data-count="{{ users|length }}">{{ users|length }}</h3>
+            <p class="mb-0">Registered Users</p>
+        </div>
+    </div>
+    <div class="col-md-6 tilt-card reveal delay-1">
+        <div class="tilt-inner stat-card p-4">
+            <h3 data-count="{{ total_workouts }}">{{ total_workouts }}</h3>
+            <p class="mb-0">Total Workouts Logged Across System</p>
+        </div>
+    </div>
+</div>
+
+<div class="card reveal">
+    <div class="card-body">
+        <h5 class="card-title mb-3">User & Subscription Management</h5>
+        <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Subscription Tier</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="mono">{{ u.id }}</td>
+                    <td class="fw-bold">{{ u.username }}</td>
+                    <td class="text-muted">{{ u.email }}</td>
+                    <td>
+                        {% if u.is_admin %}<span class="badge bg-danger">Admin</span>{% else %}<span class="badge bg-secondary">User</span>{% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if u.subscription_tier == 'pro' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ u.subscription_tier|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.toggle_subscription', user_id=u.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                Toggle Subscription
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<div class="quote-strip qs-strength my-4 reveal">
+    <span class="quote-mark">&ldquo;</span>
+    <p>A gym that <span class="amber">tracks the work</span> is one that respects it. Every toggle here changes someone's training day.</p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Go Pro — Gym Tracker{% endblock %}
+{% block content %}
+
+<div class="hero-banner hero-silhouette mb-4 reveal in-view">
+    <div class="hero-content text-center w-100">
+        <div class="hero-eyebrow mb-2">Gym Tracker Pro</div>
+        <h2 class="hero-title">Never let a <span class="amber">cap</span> slow your progress</h2>
+        <p class="hero-sub mx-auto">Free gets you started. Pro makes sure nothing you've earned in the gym ever gets capped, deleted, or forgotten.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center reveal">
+    <div class="col-md-7 col-lg-6">
+        <div class="tilt-card">
+        <div class="tilt-inner card pricing-card text-center p-3">
+            <div class="card-body p-4">
+                <div class="hero-eyebrow mb-2">Unlimited training</div>
+                <h2 class="card-title fw-bold mb-0">Gym Tracker Pro</h2>
+                <div class="price-tag mt-3 mb-1">$0<span style="font-size:1.1rem; color:var(--gray-400); font-family:var(--font-body); text-transform:none;">/simulated</span></div>
+                <p class="text-muted mb-4" style="text-transform:none; letter-spacing:normal;">Unlock unlimited workout logging and lifetime progress analytics.</p>
+
+                <div class="text-start my-4">
+                    <div class="feature-check">
+                        <span class="chk">✓</span>
+                        <span><strong>Unlimited Workout Logs</strong> — Free is capped at 10</span>
+                    </div>
+                    <div class="feature-check">
+                        <span class="chk">✓</span>
+                        <span>Full edit & delete control</span>
+                    </div>
+                    <div class="feature-check">
+                        <span class="chk">✓</span>
+                        <span>Exportable progress statistics</span>
+                    </div>
+                    <div class="feature-check">
+                        <span class="chk">✓</span>
+                        <span>No trial countdown, ever</span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('subscription.upgrade') }}">
+                    <button type="submit" class="btn btn-glow btn-lg w-100 btn-pulse">Upgrade Now (Simulated)</button>
+                </form>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<div class="quote-strip qs-boxing my-4 reveal">
+    <span class="quote-mark">&ldquo;</span>
+    <p>The set you almost didn't log is usually the one that <span class="amber">mattered most.</span> Don't let a limit decide what counts.</p>
+</div>
+
+{% endblock %}

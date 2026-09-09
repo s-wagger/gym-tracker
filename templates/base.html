@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gym Tracker{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='js/css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <noscript><style>.reveal{opacity:1 !important; transform:none !important;}</style></noscript>
+    <script>
+        // Apply saved theme before first paint, to avoid a flash of the wrong theme.
+        (function () {
+            try {
+                if (localStorage.getItem('gt-theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark gt-navbar sticky-top mb-4">
+        <div class="container">
+            <a class="gt-brand" href="{{ url_for('user.dashboard') }}">
+                <svg class="barbell-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="plateGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#ffe566"/>
+                            <stop offset="100%" stop-color="#e0a800"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="4" y="21" width="40" height="6" rx="2" fill="#3a3a3d"/>
+                    <g class="plate">
+                        <circle cx="10" cy="24" r="9" fill="url(#plateGrad)"/>
+                        <circle cx="10" cy="24" r="3.4" fill="#0b0b0c"/>
+                    </g>
+                    <g class="plate">
+                        <circle cx="38" cy="24" r="9" fill="url(#plateGrad)"/>
+                        <circle cx="38" cy="24" r="3.4" fill="#0b0b0c"/>
+                    </g>
+                </svg>
+                Gym<span class="brand-amber">Tracker</span>
+            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                {% if current_user.is_authenticated %}
+                    <span class="badge gt-badge-tier">
+                        {{ 'PRO' if current_user.subscription_tier == 'pro' or current_user.is_admin else 'FREE TIER' }}
+                    </span>
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-warning btn-sm">Admin</a>
+                    {% endif %}
+                    <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-light btn-sm">Dashboard</a>
+                    {% if current_user.subscription_tier != 'pro' and not current_user.is_admin %}
+                        <a href="{{ url_for('subscription.checkout') }}" class="btn btn-glow btn-sm">Go Pro</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-sm">Login</a>
+                    <a href="{{ url_for('auth.signup') }}" class="btn btn-glow btn-sm">Register</a>
+                {% endif %}
+                <button id="themeToggle" type="button" class="theme-toggle-btn" title="Switch to light mode" aria-label="Switch to light mode">🌙</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container page-fade-in">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="gt-footer">
+        <span class="amber">No excuses.</span> Just sets, reps, and honest numbers. — Gym Tracker
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
