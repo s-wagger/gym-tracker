@@ -1,4 +1,8 @@
 import random
+import os
+import resend
+
+resend.api_key = os.getenv("RESEND_API_KEY")
 import re
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -20,45 +24,25 @@ def is_password_strong(password):
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
         return False, "Password must contain at least one special character."
     return True, ""
-
 def send_otp_email(to_email, otp_code):
-    sender_email = (current_app.config.get('MAIL_USERNAME') or '').strip()
-    sender_password = (current_app.config.get('MAIL_PASSWORD') or '').strip().replace(" ", "")
-
     # Always log clearly to console/terminal for developer convenience
     print(f"\n=======================================================")
     print(f"[DEV / CONSOLE] OTP for {to_email}: {otp_code}")
     print(f"=======================================================\n")
 
-    if not sender_email or not sender_password or 'your-email' in sender_email:
-        print("[SMTP] Mail credentials not set in .env. Falling back to console OTP.")
-        return False
-
     try:
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = to_email
-        msg['Subject'] = "Gym Tracker - Email Verification Code"
-
-        body = (
-            f"Hello,\n\n"
-            f"Your 6-digit email verification code is: {otp_code}\n\n"
-            f"This code is required to activate your Gym Tracker account.\n"
-            f"If you did not request this code, please ignore this email.\n"
-        )
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, to_email, msg.as_string())
-        server.quit()
-        print(f"[SMTP SUCCESS] Verification email successfully sent to {to_email}")
+        params = {
+            "from": "Gym Tracker <onboarding@resend.dev>",
+            "to": [to_email],
+            "subject": "Gym Tracker - Email Verification Code",
+            "html": f"<p>Hello,</p><p>Your 6-digit email verification code is: <strong>{otp_code}</strong></p><p>This code is required to activate your Gym Tracker account.</p>"
+        }
+        resend.Emails.send(params)
+        print(f"[RESEND SUCCESS] Verification email successfully sent to {to_email}")
         return True
     except Exception as e:
-        print(f"[SMTP ERROR] Email sending failed: {e}")
+        print(f"[RESEND ERROR] Email sending failed: {e}")
         return False
-
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if current_user.is_authenticated:
@@ -101,6 +85,7 @@ def signup():
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
+
 
         # Send OTP email
         email_sent = send_otp_email(email, otp)

@@ -1,6 +1,6 @@
 from flask import Flask, redirect, url_for
 from config import Config
-from extensions import db, login_manager, mail
+from extensions import db, login_manager, 
 
 def create_app():
     app = Flask(__name__)
@@ -9,7 +9,6 @@ def create_app():
     # Initialize database and login manager
     db.init_app(app)
     login_manager.init_app(app)
-    mail.init_app(app)
 
     # Root route redirect to fix 404 at http://127.0.0.1:5000/
     @app.route('/')
