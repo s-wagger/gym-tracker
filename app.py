@@ -1,6 +1,6 @@
 from flask import Flask, redirect, url_for
 from config import Config
-from extensions import db, login_manager, 
+from extensions import db, login_manager
 
 def create_app():
     app = Flask(__name__)
