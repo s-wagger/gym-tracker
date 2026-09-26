@@ -1,6 +1,7 @@
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
+from flask_login import current_user
 from config import Config
-from extensions import db, login_manager~!    
+from extensions import db, login_manager
 
 def create_app():
     app = Flask(__name__)
@@ -10,10 +11,12 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
-    # Root route redirect to fix 404 at http://127.0.0.1:5000/
+    # Public landing page for visitors; logged-in users go straight to their dashboard.
     @app.route('/')
     def index():
-        return redirect(url_for('auth.login'))
+        if current_user.is_authenticated:
+            return redirect(url_for('user.dashboard'))
+        return render_template('landing.html')
 
     # Register Blueprints
     from routes.auth import auth_bp
